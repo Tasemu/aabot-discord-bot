@@ -8,7 +8,6 @@ var bot = new Discord.Client();
 
 function getAccessKey () {
 	return new Promise(function (resolve, reject) {
-		console.log('starting request');
 		easyhttp.post("https://anilist.co/api/auth/access_token",
 		{ grant_type: "client_credentials",client_id: "aabot-8kj86",client_secret: "wr5holZqPwfK6UO73N6Z7OR3714Z"},
 		function (body, res) {
@@ -29,8 +28,12 @@ function getTimeTo (accesskey, anime) {
 
 function searchAnime (accessKey, query) {
 	return new Promise(function (resolve, reject) {
+		console.log('starting search');
+		console.log("Query: " + query);
+		console.log("accessKey: " + accesskey);
 		easyhttp.get("https://anilist.co/api/anime/search/" + query + "?access_token=" + accesskey,
 		function (body, res) {
+			console.log('got a response from search');
 			resolve(JSON.parse(body));
 		});
 	});
@@ -107,9 +110,10 @@ bot.on("message", function (message) {
 	}
 	else if (command == "!search") {
 		getAccessKey().then(function (body) {
-			return searchAnime(body.access_token, context);
+			return searchAnime(JSON.parse(body).access_token, context);
 		}).then(function (results) {
-			_.each(results, function (result) {
+			console.log(results);
+			_.each(JSON.parse(results), function (result) {
 				bot.reply(message, result.title_romaji + " => " + result.id);
 			});
 		});
