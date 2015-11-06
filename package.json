@@ -1,0 +1,17 @@
+{
+  "name": "aabot",
+  "version": "1.0.0",
+  "description": "official bot for aa discord",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Montague Monro",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^4.1.1",
+    "easyhttp": "^1.0.1",
+    "moment": "^2.10.6",
+    "underscore": "^1.8.3"
+  }
+}
