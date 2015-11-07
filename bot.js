@@ -1,36 +1,64 @@
 var Discord = require("discord.js");
 var config = require("./auth.json");
-var http = require("http");
-var easyhttp = require("easyhttp");
-var _ = require('underscore');
+var request = require('request');
 
 var bot = new Discord.Client();
 
 function getAccessKey () {
 	return new Promise(function (resolve, reject) {
-		easyhttp.post("https://anilist.co/api/auth/access_token",
-		{ grant_type: "client_credentials",client_id: "aabot-8kj86",client_secret: "wr5holZqPwfK6UO73N6Z7OR3714Z"},
-		function (body, res) {
-			resolve(body);
+		request.post("https://anilist.co/api/auth/access_token", {
+			form: {
+				grant_type: "client_credentials",
+				client_id: "aabot-8kj86",
+				client_secret: "wr5holZqPwfK6UO73N6Z7OR3714Z"
+			}
+		}, function (error, response, body) {
+			if (!error && response.statusCode == 200) {
+				console.log('success: ' + body);
+				resolve(body);
+			} else {
+				console.log('error');
+				reject(error);
+			}
 		});
 	});
 }
 
 function getTimeTo (accesskey, anime) {
-	console.log('starting getimteto');
 	return new Promise(function (resolve, reject) {
-		easyhttp.get("https://anilist.co/api/anime/" + anime + "?access_token=" + accesskey,
-		function (body, res) {
-			resolve(JSON.parse(body));
+		request({
+			url: "https://anilist.co/api/anime/" + anime,
+			qs: {
+				access_token: accesskey
+			}
+		}, function (error, response, body) {
+			if (!error && response.statusCode == 200) {
+				var anime = JSON.parse(body);
+				if (anime.airing) {
+					resolve(anime);
+				} else {
+					reject("Anime not airing");
+				}
+			}
 		});
 	});
 }
 
 function searchAnime (accessKey, query) {
 	return new Promise(function (resolve, reject) {
-		easyhttp.get("https://anilist.co/api/anime/search/" + query + "?access_token=" + accessKey,
-		function (body, res) {
-			resolve(JSON.parse(body));
+		request({
+			url: "https://anilist.co/api/anime/search/" + query,
+			qs: {
+				access_token: accessKey
+			}
+		}, function (error, response, body) {
+			if (!error && response.statusCode == 200) {
+				if (body.length > 0) {
+					resolve(JSON.parse(body));
+				} else {
+					reject("Anime not found");
+				}
+			}
 		});
 	});
 }
