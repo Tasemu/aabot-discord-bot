@@ -17,7 +17,6 @@ function getAccessKey () {
 				console.log('success: ' + body);
 				resolve(body);
 			} else {
-				console.log('error');
 				reject(error);
 			}
 		});
@@ -39,6 +38,8 @@ function getTimeTo (accesskey, anime) {
 				} else {
 					reject("Anime not airing");
 				}
+			} else {
+				reject("Anime not found");
 			}
 		});
 	});
@@ -53,11 +54,13 @@ function searchAnime (accessKey, query) {
 			}
 		}, function (error, response, body) {
 			if (!error && response.statusCode == 200) {
-				if (body.length > 0) {
+				if (response.headers['content-type'] == "application/json") {
 					resolve(JSON.parse(body));
 				} else {
 					reject("Anime not found");
 				}
+			} else {
+				reject("Error with server");
 			}
 		});
 	});
@@ -101,28 +104,15 @@ bot.on("message", function (message) {
 		bot.reply(message, "pong");
 	}
 	else if (command == "!hb") {
-		var req = http.get({
-			host: "hummingbird.me",
-			port: 80,
-			path: "/api/v1/anime/" + context,
-			method: "GET"
-		}, function (response) {
-
-			var body = '';
-	        response.on('data', function(d) {
-	            body += d;
-	        });
-
-	        response.on('end', function() {
-	            // Data reception is done, do whatever with it!
-	            var parsed = JSON.parse(body);
-	            bot.reply(message, parsed.title);
+		request("https://hummingbird.me/api/v1/anime/" + context, function (error, response, body) {
+			if (!error && response.statusCode == 200) {
+				var parsed = JSON.parse(body);
+				bot.reply(message, parsed.title);
 				bot.reply(message, parsed.synopsis);
 				bot.reply(message, parsed.url);
-	        });
-
-	        req.end();
-
+			} else {
+				bot.reply(message, "Unable to find anime, make sure you are using a valid slug, e.g: 'cowboy-bebop'");
+			}
 		});
 	}
 	else if (command == "!timeto") {
@@ -130,6 +120,8 @@ bot.on("message", function (message) {
 			return getTimeTo(JSON.parse(body).access_token, context);
 		}).then(function (anime) {
 			bot.reply(message, `${anime.title_romaji} Episode ${anime.airing.next_episode} will air in ${secondsToString(anime.airing.countdown)}`);
+		}).catch(function (error) {
+			bot.reply(message, error);
 		});
 	}
 	else if (command == "!search") {
@@ -139,6 +131,8 @@ bot.on("message", function (message) {
 			results.forEach(function (result) {
 				bot.reply(message, result.title_romaji + " => " + result.id);
 			});
+		}).catch(function (error) {
+			bot.reply(message, error);
 		});
 	}
 
