@@ -23,6 +23,26 @@ function getAccessKey () {
 	});
 }
 
+function getAnime (accesskey, id) {
+	return new Promise(function (resolve, reject) {
+		request({
+			url: "https://anilist.co/api/anime/" + id,
+			qs: {
+				access_token: accesskey
+			}
+		}, function (error, response, body) {
+			if (!error && response.statusCode === 200) {
+				var anime = JSON.parse(body);
+				if (anime.id) {
+					resolve(anime);
+				} else {
+					reject("Anime not found");
+				}
+			}
+		});
+	});
+}
+
 function getTimeTo (accesskey, anime) {
 	return new Promise(function (resolve, reject) {
 		request({
@@ -103,16 +123,17 @@ bot.on("message", function (message) {
 	if (command == "!ping") {
 		bot.reply(message, "pong");
 	}
-	else if (command == "!hb") {
-		request("https://hummingbird.me/api/v1/anime/" + context, function (error, response, body) {
-			if (!error && response.statusCode == 200) {
-				var parsed = JSON.parse(body);
-				bot.reply(message, parsed.title);
-				bot.reply(message, parsed.synopsis);
-				bot.reply(message, parsed.url);
-			} else {
-				bot.reply(message, "Unable to find anime, make sure you are using a valid slug, e.g: 'cowboy-bebop'");
-			}
+	else if (command == "!anime") {
+		getAccessKey().then(function (body) {
+			return getAnime(JSON.parse(body).access_token, context);
+		}).then(function (anime) {
+			bot.reply(message, `
+-= ${anime.title_romaji} =-
+
+${anime.description}
+
+${anime.image_url_lge}
+			`);
 		});
 	}
 	else if (command == "!timeto") {
